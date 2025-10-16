@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Crimson Knights Chess</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="background-glow"></div>
+  <main class="app-shell">
+    <header class="top-bar">
+      <h1>Crimson Knights</h1>
+      <button id="reset-btn" type="button">New Game</button>
+    </header>
+    <section class="game-wrapper">
+      <aside class="status-panel">
+        <div class="status-card">
+          <h2>Game Status</h2>
+          <p id="status-text">White to move</p>
+          <p id="check-text" class="hidden">Check!</p>
+        </div>
+        <div class="status-card">
+          <h2>Captured Pieces</h2>
+          <div class="captures">
+            <div>
+              <h3>White</h3>
+              <div id="white-captures" class="capture-row"></div>
+            </div>
+            <div>
+              <h3>Black</h3>
+              <div id="black-captures" class="capture-row"></div>
+            </div>
+          </div>
+        </div>
+        <div class="status-card move-log">
+          <h2>Move Log</h2>
+          <ol id="move-log"></ol>
+        </div>
+      </aside>
+      <div class="board-container">
+        <div id="chessboard" class="chessboard" aria-label="Chess board" role="application"></div>
+        <div class="coordinates horizontal" aria-hidden="true"></div>
+        <div class="coordinates vertical" aria-hidden="true"></div>
+      </div>
+    </section>
+  </main>
+  <div id="promotion-dialog" class="promotion-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="promotion-title">
+    <div class="promotion-content">
+      <h2 id="promotion-title">Choose your promotion</h2>
+      <div class="promotion-options" id="promotion-options"></div>
+    </div>
+  </div>
+  <canvas id="confetti-canvas"></canvas>
+  <script src="scripts/chess.js"></script>
+  <script src="scripts/confetti.js"></script>
+  <script src="scripts/sounds.js"></script>
+  <script src="scripts/game.js"></script>
+</body>
+</html>
