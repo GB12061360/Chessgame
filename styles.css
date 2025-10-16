@@ -5,13 +5,13 @@
   --panel-border: rgba(206, 236, 214, 0.16);
   --accent: #ff8251;
   --accent-soft: rgba(255, 130, 81, 0.65);
-  --tile-light: #f7f2e1;
+  --tile-light: #c63a3a;
   --tile-dark: #396b4b;
   --tile-highlight: rgba(255, 227, 148, 0.8);
   --tile-target: rgba(255, 255, 255, 0.72);
   --text-primary: #f3f8f2;
   --text-muted: #c7dacc;
-  --piece-white: #fff3d7;
+  --piece-white: #ffe7a3;
   --piece-black: #1c3526;
   --piece-black-glow: rgba(0, 0, 0, 0.55);
   --frame-light: #d9b68f;
@@ -288,7 +288,8 @@ body {
 
 .piece-white {
   color: var(--piece-white);
-  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.45));
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.65), 0 4px 14px rgba(0, 0, 0, 0.45);
+  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.55));
 }
 
 .piece-black {
