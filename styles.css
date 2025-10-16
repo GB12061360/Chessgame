@@ -25,7 +25,8 @@ body {
   font-family: "Exo 2", "Segoe UI", system-ui, sans-serif;
   color: var(--text-primary);
   background: var(--background);
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 #background-glow {
