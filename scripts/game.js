@@ -92,7 +92,7 @@
         const squareName = `${files[fileIndex]}${ranks[rankIndex]}`;
         const square = document.createElement('div');
         square.classList.add('square');
-        const isDark = (fileIndex + rankIndex) % 2 === 0;
+        const isDark = (fileIndex + rankIndex) % 2 === 1;
         square.classList.add(isDark ? 'dark' : 'light');
         square.dataset.square = squareName;
         square.addEventListener('click', () => handleSquareClick(squareName));
@@ -128,7 +128,7 @@
         const piece = board[rankIndex][fileIndex];
         if (piece) {
           const pieceEl = document.createElement('span');
-          pieceEl.classList.add('piece');
+          pieceEl.classList.add('piece', piece.color === 'w' ? 'piece-white' : 'piece-black');
           pieceEl.textContent = game.getPieceSymbol(piece.type, piece.color);
           square.appendChild(pieceEl);
         }
@@ -417,6 +417,7 @@
         .filter((piece) => piece === pieceType)
         .forEach(() => {
           const span = document.createElement('span');
+          span.classList.add('piece', 'piece-white');
           span.textContent = game.getPieceSymbol(pieceType, 'w');
           whiteCaptures.appendChild(span);
         });
@@ -424,6 +425,7 @@
         .filter((piece) => piece === pieceType)
         .forEach(() => {
           const span = document.createElement('span');
+          span.classList.add('piece', 'piece-black');
           span.textContent = game.getPieceSymbol(pieceType, 'b');
           blackCaptures.appendChild(span);
         });
