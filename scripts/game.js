@@ -84,6 +84,31 @@
     ],
   };
 
+  function createPieceElement(type, color) {
+    const span = document.createElement('span');
+    span.classList.add('piece', color === 'w' ? 'piece-white' : 'piece-black');
+    span.dataset.role = type;
+    span.dataset.color = color;
+    span.textContent = game.getPieceSymbol(type, color);
+    span.setAttribute('role', 'img');
+    const pieceNames = { k: 'King', q: 'Queen', r: 'Rook', b: 'Bishop', n: 'Knight', p: 'Pawn' };
+    const themedNames = {
+      k: 'Santa King',
+      q: 'Mrs. Claus Queen',
+      r: 'Gingerbread Rook',
+      b: 'Snowman Bishop',
+      n: 'Reindeer Knight',
+      p: 'Elf Pawn',
+    };
+    const colorName = color === 'w' ? 'White' : 'Black';
+    span.setAttribute(
+      'aria-label',
+      `${colorName} ${pieceNames[type]} (${themedNames[type] || pieceNames[type]})`
+    );
+    span.setAttribute('aria-hidden', 'false');
+    return span;
+  }
+
   function buildBoard() {
     boardEl.innerHTML = '';
     boardSquares.clear();
@@ -92,7 +117,7 @@
         const squareName = `${files[fileIndex]}${ranks[rankIndex]}`;
         const square = document.createElement('div');
         square.classList.add('square');
-        const isDark = (fileIndex + rankIndex) % 2 === 0;
+        const isDark = (fileIndex + rankIndex) % 2 === 1;
         square.classList.add(isDark ? 'dark' : 'light');
         square.dataset.square = squareName;
         square.addEventListener('click', () => handleSquareClick(squareName));
@@ -127,10 +152,7 @@
         square.innerHTML = '';
         const piece = board[rankIndex][fileIndex];
         if (piece) {
-          const pieceEl = document.createElement('span');
-          pieceEl.classList.add('piece');
-          pieceEl.textContent = game.getPieceSymbol(piece.type, piece.color);
-          square.appendChild(pieceEl);
+          square.appendChild(createPieceElement(piece.type, piece.color));
         }
       }
     }
@@ -207,7 +229,10 @@
       button.className = 'promotion-button';
       button.dataset.promotion = candidate.promotion;
       const pieceName = promotionLabel(candidate.promotion);
-      button.innerHTML = `${game.getPieceSymbol(candidate.promotion, candidate.color)} ${pieceName}`;
+      const icon = createPieceElement(candidate.promotion, candidate.color);
+      icon.classList.add('promotion-icon');
+      button.appendChild(icon);
+      button.append(pieceName);
       button.addEventListener('click', () => {
         promotionDialog.classList.add('hidden');
         pendingPromotion = null;
@@ -416,16 +441,12 @@
       capturedPieces.w
         .filter((piece) => piece === pieceType)
         .forEach(() => {
-          const span = document.createElement('span');
-          span.textContent = game.getPieceSymbol(pieceType, 'w');
-          whiteCaptures.appendChild(span);
+          whiteCaptures.appendChild(createPieceElement(pieceType, 'w'));
         });
       capturedPieces.b
         .filter((piece) => piece === pieceType)
         .forEach(() => {
-          const span = document.createElement('span');
-          span.textContent = game.getPieceSymbol(pieceType, 'b');
-          blackCaptures.appendChild(span);
+          blackCaptures.appendChild(createPieceElement(pieceType, 'b'));
         });
     });
   }
