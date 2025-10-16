@@ -3,6 +3,7 @@
   const ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
 
   const boardEl = document.getElementById('chessboard');
+  const boardContainer = document.querySelector('.board-container');
   const statusText = document.getElementById('status-text');
   const checkText = document.getElementById('check-text');
   const moveLog = document.getElementById('move-log');
@@ -14,10 +15,12 @@
   const whiteCaptures = document.getElementById('white-captures');
   const blackCaptures = document.getElementById('black-captures');
   const confettiCanvas = document.getElementById('confetti-canvas');
+  const aiCommentary = document.getElementById('ai-commentary');
 
   const game = new window.CrimsonChess();
   const soundscape = new window.Soundscape();
   const confetti = new window.ConfettiController(confettiCanvas);
+  const bot = new window.CrimsonBot(game, { randomness: 0.45, aggression: 1 });
 
   const boardSquares = new Map();
   const capturedPieces = { w: [], b: [] };
@@ -25,6 +28,61 @@
   let selectedSquare = null;
   let highlightedTargets = [];
   let pendingPromotion = null;
+  let lastMoveSquares = [];
+  let isBotThinking = false;
+  let botMoveTimeout = null;
+  let boardExploded = false;
+
+  const playerColor = 'w';
+  const botColor = 'b';
+
+  const aiQuips = {
+    start: ['Awaiting your opening move.'],
+    thinking: [
+      'Calculating a cunning reply…',
+      'Let me consult the crimson codex…',
+      'Thinking… the embers whisper strategies.',
+    ],
+    playerMove: [
+      'Intriguing choice.',
+      'Bold move, challenger.',
+      'Your strategy unfolds elegantly.',
+    ],
+    playerCapture: [
+      'Ouch! That piece was loyal.',
+      'You strike with precision.',
+      'An impressive capture.',
+    ],
+    playerCheck: [
+      'So daring—you threaten my king!',
+      'Check? I did not foresee that spark.',
+    ],
+    capture: [
+      'Another trophy for the crimson legion.',
+      'I claim this square in my name.',
+      'A swift capture keeps things interesting.',
+    ],
+    check: [
+      'Check! Your king quivers.',
+      'Beware, your king stands exposed.',
+    ],
+    neutral: [
+      'Let us see how you answer.',
+      'The board glows with possibility.',
+    ],
+    defeat: [
+      'The crimson legion prevails!',
+      'Another victory scorched into memory.',
+    ],
+    victory: [
+      'What a dazzling checkmate—you win!',
+      'I concede. Your tactics blaze bright.',
+    ],
+    draw: [
+      'A truce forged in embers.',
+      'Balanced flames—neither side yields.',
+    ],
+  };
 
   function buildBoard() {
     boardEl.innerHTML = '';
@@ -94,6 +152,7 @@
 
   function handleSquareClick(square) {
     if (pendingPromotion) return;
+    if (isBotThinking) return;
     const squarePiece = game.getPiece(square);
     const turn = game.getTurn();
 
@@ -174,6 +233,155 @@
     }
   }
 
+  function randomEntry(list) {
+    if (!Array.isArray(list) || !list.length) return null;
+    return list[Math.floor(Math.random() * list.length)];
+  }
+
+  function setAICommentary(type) {
+    if (!aiCommentary) return;
+    const pool = aiQuips[type];
+    if (!pool || !pool.length) return;
+    aiCommentary.textContent = randomEntry(pool);
+  }
+
+  function applyLastMoveHighlight(move) {
+    lastMoveSquares.forEach((squareName) => {
+      const squareEl = boardSquares.get(squareName);
+      if (squareEl) {
+        squareEl.classList.remove('last-move');
+      }
+    });
+    lastMoveSquares = [];
+    if (!move) return;
+    [move.from, move.to].forEach((squareName) => {
+      if (!squareName) return;
+      const squareEl = boardSquares.get(squareName);
+      if (squareEl) {
+        squareEl.classList.add('last-move');
+        lastMoveSquares.push(squareName);
+      }
+    });
+  }
+
+  function flashBoard(effectClass) {
+    if (!boardContainer || !effectClass) return;
+    boardContainer.classList.remove('capture-flash', 'check-flash');
+    void boardContainer.offsetWidth;
+    boardContainer.classList.add(effectClass);
+    window.setTimeout(() => {
+      if (boardContainer) {
+        boardContainer.classList.remove(effectClass);
+      }
+    }, 420);
+  }
+
+  function handleVisualEffects(move) {
+    applyLastMoveHighlight(move);
+    if (move.checkmate) return;
+    if (move.flags && move.flags.capture) {
+      flashBoard('capture-flash');
+    } else if (move.check) {
+      flashBoard('check-flash');
+    }
+  }
+
+  function triggerBoardExplosion() {
+    if (!boardContainer || boardExploded) return;
+    boardExploded = true;
+    boardContainer.classList.add('explode');
+    boardSquares.forEach((square) => {
+      if (!square) return;
+      const blastX = `${(Math.random() - 0.5) * 200}px`;
+      const blastY = `${(Math.random() - 0.5) * 200}px`;
+      const blastRot = `${(Math.random() - 0.5) * 260}deg`;
+      square.style.setProperty('--blast-x', blastX);
+      square.style.setProperty('--blast-y', blastY);
+      square.style.setProperty('--blast-rot', blastRot);
+    });
+  }
+
+  function resetBoardExplosion() {
+    if (!boardContainer) return;
+    boardExploded = false;
+    boardContainer.classList.remove('explode');
+    boardSquares.forEach((square) => {
+      if (!square) return;
+      square.style.removeProperty('--blast-x');
+      square.style.removeProperty('--blast-y');
+      square.style.removeProperty('--blast-rot');
+    });
+  }
+
+  function scheduleBotMove() {
+    if (isBotThinking || boardExploded) return;
+    if (game.getTurn() !== botColor) return;
+    isBotThinking = true;
+    setAICommentary('thinking');
+    if (botMoveTimeout) {
+      window.clearTimeout(botMoveTimeout);
+    }
+    botMoveTimeout = window.setTimeout(() => {
+      botMoveTimeout = null;
+      if (game.getTurn() !== botColor) {
+        isBotThinking = false;
+        return;
+      }
+      const move = bot.chooseMove();
+      if (!move) {
+        isBotThinking = false;
+        return;
+      }
+      performMove(move);
+    }, 450 + Math.random() * 500);
+  }
+
+  function handlePostMove(result) {
+    if (result.checkmate) {
+      if (result.color === playerColor) {
+        setAICommentary('victory');
+      } else if (result.color === botColor) {
+        setAICommentary('defeat');
+      }
+      if (botMoveTimeout) {
+        window.clearTimeout(botMoveTimeout);
+        botMoveTimeout = null;
+      }
+      isBotThinking = false;
+      return;
+    }
+
+    if (result.draw) {
+      setAICommentary('draw');
+      if (botMoveTimeout) {
+        window.clearTimeout(botMoveTimeout);
+        botMoveTimeout = null;
+      }
+      isBotThinking = false;
+      return;
+    }
+
+    if (result.color === playerColor) {
+      if (result.check) {
+        setAICommentary('playerCheck');
+      } else if (result.flags && result.flags.capture) {
+        setAICommentary('playerCapture');
+      } else {
+        setAICommentary('playerMove');
+      }
+      scheduleBotMove();
+    } else if (result.color === botColor) {
+      isBotThinking = false;
+      if (result.check) {
+        setAICommentary('check');
+      } else if (result.flags && result.flags.capture) {
+        setAICommentary('capture');
+      } else {
+        setAICommentary('neutral');
+      }
+    }
+  }
+
   function performMove(move) {
     const result = game.makeMove(move);
     if (!result) {
@@ -184,11 +392,13 @@
     pendingPromotion = null;
     clearSelection();
     renderBoard();
+    handleVisualEffects(result);
     updateCaptures(result);
     updateMoveLog(result);
     updateStatus(result);
     highlightCheck(result);
     playSounds(result);
+    handlePostMove(result);
   }
 
   function updateCaptures(move) {
@@ -248,7 +458,11 @@
       statusText.textContent = `${move.color === 'w' ? 'White' : 'Black'} wins by checkmate!`;
       checkText.textContent = 'Checkmate!';
       checkText.classList.remove('hidden');
-      confetti.burst();
+      if (move.color === playerColor) {
+        confetti.burst();
+      } else if (move.color === botColor) {
+        triggerBoardExplosion();
+      }
     } else if (move.draw) {
       statusText.textContent = 'Game drawn';
       switch (move.drawReason) {
@@ -305,7 +519,11 @@
 
   function playSounds(move) {
     if (move.checkmate) {
-      soundscape.playWin();
+      if (move.color === playerColor) {
+        soundscape.playWin();
+      } else {
+        soundscape.playDefeat();
+      }
     } else if (move.check) {
       soundscape.playCheck();
     } else if (move.flags && move.flags.capture) {
@@ -322,9 +540,21 @@
     moveLog.innerHTML = '';
     renderCaptures();
     renderBoard();
+    resetBoardExplosion();
+    applyLastMoveHighlight(null);
     clearSelection();
+    if (botMoveTimeout) {
+      window.clearTimeout(botMoveTimeout);
+      botMoveTimeout = null;
+    }
+    isBotThinking = false;
+    pendingPromotion = null;
     statusText.textContent = 'White to move';
     checkText.classList.add('hidden');
+    if (boardContainer) {
+      boardContainer.classList.remove('capture-flash', 'check-flash');
+    }
+    setAICommentary('start');
   }
 
   resetBtn.addEventListener('click', () => {
@@ -343,4 +573,5 @@
   renderBoard();
   renderCaptures();
   statusText.textContent = 'White to move';
+  setAICommentary('start');
 })();
