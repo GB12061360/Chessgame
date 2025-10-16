@@ -1,7 +1,22 @@
-echo "# Chessgame" >> README.md
-git init
-git add README.md
-git commit -m "first commit"
-git branch -M main
-git remote add origin https://github.com/GB12061360/Chessgame.git
-git push -u origin main
+# Chessgame
+
+This repository now contains two ways to experience Crimson Knights Chess:
+
+- **Web version** (original): open `index.html` in a browser to play with the interactive
+  JavaScript-powered board.
+- **Java edition** (new): a pure Java port of the same engine that can be run from the
+  command line.
+
+## Running the Java edition
+
+1. Navigate to the `java` directory: `cd java`.
+2. Compile and run with Maven:
+   ```bash
+   mvn -q exec:java -Dexec.mainClass="com.crimsonknights.chess.ChessCli"
+   ```
+   (You can also compile with `mvn package` and run the generated jar.)
+3. Enter moves in coordinate notation (e.g., `e2e4`, `g7g8q`). Type `undo` to revert the
+   last move, `reset` to restart, or `exit` to quit.
+
+The Java engine mirrors the rules implemented in the browser edition, supporting special
+moves such as en passant, castling, and promotions.
