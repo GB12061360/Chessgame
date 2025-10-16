@@ -81,6 +81,15 @@ class Soundscape {
   playWin() {
     this.playSweep([440, 660, 880, 1320], 1.2);
   }
+
+  playDefeat() {
+    this.playSweep([160, 120, 80, 60], 1);
+    this.playTone(70, 0.65, {
+      type: 'sawtooth',
+      peak: 0.45,
+      sustain: 0.0025,
+    });
+  }
 }
 
 window.Soundscape = Soundscape;
